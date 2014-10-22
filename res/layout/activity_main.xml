@@ -6,6 +6,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:background="#000000"
     tools:context="com.wdc.nintenbro.MainActivity" >
 
     <ImageButton
@@ -15,6 +16,16 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:onClick="sendMessage"
-        android:src="@android:drawable/btn_star_big_on" />
+        android:src="@android:drawable/btn_star_big_off" />
+
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/imageButton1"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="68dp"
+        android:src="@drawable/banana"
+        android:visibility="invisible" />
 
 </RelativeLayout>

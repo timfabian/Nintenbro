@@ -1,19 +1,25 @@
 package com.wdc.nintenbro;
 
+import java.util.Random;
+
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
-
+import android.widget.ImageView;
 
 public class MainActivity extends ActionBarActivity {
+	private Item mCurrentItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        
+        // Initialize
+        mCurrentItem = Item.NULL;
     }
 
 
@@ -36,16 +42,57 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
     
-    public void sendMessage(View view) {
-    	ImageButton clickButton = (ImageButton) findViewById(R.id.imageButton1);
+    public void setItem (Item item) {
+    	ImageView img= (ImageView) findViewById(R.id.imageView1);
     	
-    	if ( ( clickButton.getTag() == null ) || ( clickButton.getTag().equals(android.R.drawable.btn_star_big_on) ) ) {
-    		clickButton.setImageResource(android.R.drawable.btn_star_big_off);
-    		clickButton.setTag(android.R.drawable.btn_star_big_off);
+    	// Save the current item
+    	mCurrentItem = item;
+    	
+    	switch (item) {
+    	
+    		case BANANA :
+    			img.setVisibility(View.VISIBLE);
+    			img.setImageResource(R.drawable.banana);
+    			break;
+    		case MUSHROOM :
+    			img.setVisibility(View.VISIBLE);
+    			img.setImageResource(R.drawable.mushroom);
+    			break;
+    		case REDSHELL :
+    			img.setVisibility(View.VISIBLE);
+    			img.setImageResource(R.drawable.redshell);
+    			break;
+    		default :
+    			img.setVisibility(View.INVISIBLE);
+    			break;
+    			
+    	}
+    	
+    }
+    
+    public void setButtonOn() {
+    	ImageButton clickButton = (ImageButton) findViewById(R.id.imageButton1);
+    	clickButton.setImageResource(android.R.drawable.btn_star_big_on);
+    }
+    
+    public void setButtonOff() {
+    	ImageButton clickButton = (ImageButton) findViewById(R.id.imageButton1);
+    	clickButton.setImageResource(android.R.drawable.btn_star_big_off);
+    }
+    
+    public void sendMessage(View view) {
+    	
+    	if ( mCurrentItem == Item.NULL ) {
+    		// No item would mean no message
+    		// Set a random item for funsies
+    		Random r = new Random();
+        	int randomInt = r.nextInt(Item.values().length - 1);
+    		setItem(Item.values()[randomInt]);
+    		setButtonOn();
     	}
     	else {
-    		clickButton.setImageResource(android.R.drawable.btn_star_big_on);
-    		clickButton.setTag(android.R.drawable.btn_star_big_on);
+    		setItem(Item.NULL);
+    		setButtonOff();
     	}
     	
     }
