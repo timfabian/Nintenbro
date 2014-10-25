@@ -40,7 +40,7 @@ public class MainActivity extends ActionBarActivity {
 	private static final int TARGET_PORT = 5000;
     private static final String TARGET_IP = "10.0.2.2";
     
-    private static final boolean mServerModeFlag = false;
+    private static final boolean mServerModeFlag = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,12 +51,16 @@ public class MainActivity extends ActionBarActivity {
         mCurrentItem = Item.NULL;
         
         if ( mServerModeFlag == false ) {
+        	
+        	Log.v("Nintenbro", "client flag");
         
 	        // Start the client thread to open a socket
 	        new Thread( new ClientThread() ).start();
         
         }
         else {
+        	
+        	Log.v("Nintenbro", "server flag");
         	
         	updateConversationHandler = new Handler();
         
@@ -65,7 +69,7 @@ public class MainActivity extends ActionBarActivity {
         
         }
 
-    }
+    } // end function onCreate
     
     @Override
 	protected void onStop() {
@@ -82,7 +86,7 @@ public class MainActivity extends ActionBarActivity {
 			e.printStackTrace();
 		}
 		
-	}
+	} // end function onStop
 
     class ClientThread implements Runnable {
     	
@@ -103,9 +107,9 @@ public class MainActivity extends ActionBarActivity {
     			e.printStackTrace();
     		}
     		
-    	}
+    	} // end function run
     	
-    }
+    } // end class ClientThread
     
     class ServerThread implements Runnable {
 
@@ -135,7 +139,7 @@ public class MainActivity extends ActionBarActivity {
 				
 			}
 			
-		}
+		} // end function run
 		
 	} // end class ServerThread
     
@@ -154,7 +158,7 @@ public class MainActivity extends ActionBarActivity {
 				e.printStackTrace();
 			}
 			
-		}
+		} // end function InputCommunicationThread
 
 		public void run() {
 
@@ -171,7 +175,7 @@ public class MainActivity extends ActionBarActivity {
 				
 			}
 			
-		}
+		} // end function run
 
 	} // end class Communication Thread
     
@@ -180,12 +184,20 @@ public class MainActivity extends ActionBarActivity {
 
 		public updateUIThread( String str ) {
 			this.msg = str;
-		}
+		} // end function updateUIThread
 
 		@Override
 		public void run() {
-			Log.v("Nintenbro", "Client Says: "+ msg);
-		}
+			Toast.makeText(getApplicationContext(), "Client Says: "+ msg, Toast.LENGTH_SHORT).show();
+			
+			if ( msg.equals("receive mushroom") )
+				setItem( Item.MUSHROOM );
+			else if ( msg.equals("receive redshell") )
+				setItem( Item.REDSHELL );
+			else if ( msg.equals("receive banana") )
+				setItem( Item.BANANA );
+			
+		} // end function run
 		
 	} // end class updateUIThread
 
@@ -194,7 +206,7 @@ public class MainActivity extends ActionBarActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
-    }
+    } // end function onCreateOptionsMenu
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -206,7 +218,7 @@ public class MainActivity extends ActionBarActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
+    } // end function onOptionsItemSelected
     
     public void sendMessage(View view) {
     	
@@ -240,7 +252,7 @@ public class MainActivity extends ActionBarActivity {
     		setButtonOff();
     	}
     	
-    }
+    } // end function sendMessage
     
     public void setItem (Item item) {
     	ImageView img= (ImageView) findViewById(R.id.imageView1);
@@ -268,16 +280,16 @@ public class MainActivity extends ActionBarActivity {
     			
     	}
     	
-    }
+    } // end function setItem
     
     public void setButtonOn() {
     	ImageButton clickButton = (ImageButton) findViewById(R.id.imageButton1);
     	clickButton.setImageResource(android.R.drawable.btn_star_big_on);
-    }
+    } // end function setButtonOn
     
     public void setButtonOff() {
     	ImageButton clickButton = (ImageButton) findViewById(R.id.imageButton1);
     	clickButton.setImageResource(android.R.drawable.btn_star_big_off);
-    }
+    } // end function setButtonOff
     
-}
+} // end class MainActivity
