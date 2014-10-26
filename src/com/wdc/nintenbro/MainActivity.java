@@ -19,6 +19,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity {
@@ -62,6 +63,7 @@ public class MainActivity extends ActionBarActivity {
         	
         	Log.v("Nintenbro", "server flag");
         	
+        	// Handler on the UI thread allows the server thread to update the UI with items
         	updateConversationHandler = new Handler();
         
 	        // Start listening on the server thread
@@ -101,6 +103,8 @@ public class MainActivity extends ActionBarActivity {
     			// TODO - port number
     			mSocket = new Socket(servAddr, TARGET_PORT);
     			
+    			updateConversationHandler.post( new updateConnectionText( "Connected" ) );
+    			
     		}
     		// TODO - better error handling
     		catch (Exception e) {
@@ -130,6 +134,7 @@ public class MainActivity extends ActionBarActivity {
 					
 					Log.v("Nintenbro", "server socket accepted connection");
 
+					// Launch input communication thread to handle the message received
 					InputCommunicationThread commThread = new InputCommunicationThread( socket );
 					new Thread( commThread ).start();
 				} 
@@ -161,13 +166,18 @@ public class MainActivity extends ActionBarActivity {
 		} // end function InputCommunicationThread
 
 		public void run() {
+			
+			updateConversationHandler.post( new updateConnectionText( "Connected" ) );
 
 			while ( !Thread.currentThread().isInterrupted() ) {
 
 				try {
 					String read = input.readLine();
 					Log.v("Nintenbro", "read " + read);
+					
+					// Post to UI thread's handler
 					updateConversationHandler.post( new updateUIThread( read ) );
+					
 				} 
 				catch ( Exception e ) {
 					e.printStackTrace();
@@ -200,6 +210,21 @@ public class MainActivity extends ActionBarActivity {
 		} // end function run
 		
 	} // end class updateUIThread
+    
+    class updateConnectionText implements Runnable {
+    	private String msg;
+    	
+    	public updateConnectionText( String str ) {
+			this.msg = str;
+		} // end function updateConnectionText
+    	
+    	@Override
+		public void run() {
+    		TextView connectionText= (TextView) findViewById(R.id.textView1);
+    		connectionText.setText(msg);
+		} // end function run
+    	
+    } // end class updateConnectionText
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -231,7 +256,6 @@ public class MainActivity extends ActionBarActivity {
     		Random r = new Random();
         	int randomInt = r.nextInt(Item.values().length - 1);
     		setItem(Item.values()[randomInt]);
-    		setButtonOn();
     		
     	}
     	else {
@@ -249,7 +273,6 @@ public class MainActivity extends ActionBarActivity {
 	        }
     		
     		setItem(Item.NULL);
-    		setButtonOff();
     	}
     	
     } // end function sendMessage
@@ -265,17 +288,21 @@ public class MainActivity extends ActionBarActivity {
     		case BANANA :
     			img.setVisibility(View.VISIBLE);
     			img.setImageResource(R.drawable.banana);
+    			setButtonOn();
     			break;
     		case MUSHROOM :
     			img.setVisibility(View.VISIBLE);
     			img.setImageResource(R.drawable.mushroom);
+    			setButtonOn();
     			break;
     		case REDSHELL :
     			img.setVisibility(View.VISIBLE);
     			img.setImageResource(R.drawable.redshell);
+    			setButtonOn();
     			break;
     		default :
     			img.setVisibility(View.INVISIBLE);
+    			setButtonOff();
     			break;
     			
     	}
