@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.util.Random;
 
 import android.support.v7.app.ActionBarActivity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -41,7 +42,7 @@ public class MainActivity extends ActionBarActivity {
 	private static final int TARGET_PORT = 5000;
     private static final String TARGET_IP = "10.0.2.2";
     
-    private static final boolean mServerModeFlag = true;
+    private static final boolean mServerModeFlag = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +74,11 @@ public class MainActivity extends ActionBarActivity {
 
     } // end function onCreate
     
+    public void launchMapActivity(View view) {
+    	Intent intent = new Intent(this, MapActivity.class);
+        startActivity(intent);
+    } // end function launchMapActivity
+    
     @Override
 	protected void onStop() {
 		super.onStop();
@@ -80,7 +86,10 @@ public class MainActivity extends ActionBarActivity {
 		try {
 			
 			if ( mServerModeFlag == false )
-				mSocket.close();
+				
+				if ( mSocket.isConnected() )
+					mSocket.close();
+			
 			else
 				mServerSocket.close();
 		} 
