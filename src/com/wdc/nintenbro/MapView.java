@@ -15,9 +15,9 @@ public class MapView extends TileView {
 	
 	private Map mMap;
 	
-	private static final int RED_STAR = 1;
+	private static final int OFFROAD_DIRT = 1;
     private static final int YELLOW_STAR = 2;
-    private static final int GREEN_STAR = 3;
+    private static final int ROAD_GRASS = 3;
     
     private long mMoveDelay = 1000;
     private long mLastMove;
@@ -82,11 +82,11 @@ public class MapView extends TileView {
 
         resetTiles(4);
         //index 0 is blank
-        //loadTile(RED_STAR, r.getDrawable(R.drawable.redstar));
-        loadTile(RED_STAR, test);
+        loadTile(OFFROAD_DIRT, r.getDrawable(R.drawable.dirt));
+        //loadTile(OFFROAD_DIRT, test);
         loadTile(YELLOW_STAR, r.getDrawable(R.drawable.yellowstar));
-        //loadTile(GREEN_STAR, r.getDrawable(R.drawable.greenstar));
-        loadTile(GREEN_STAR, test2);
+        loadTile(ROAD_GRASS, r.getDrawable(R.drawable.grass1));
+        //loadTile(ROAD_GRASS, test2);
 
     } // end function initMapView
     
@@ -96,13 +96,17 @@ public class MapView extends TileView {
     } // end function setMap
     
     private void drawMap() {
-    	int xfactor = (int) Math.ceil( (double) Map.MAP_ROWS / mXTileCount);
-    	int yfactor = (int) Math.ceil( (double) Map.MAP_COLUMNS / mYTileCount);
+
+    	// Get the minimum between x and y tiles to limit the map to a square
+    	int minimumTileCount = mXTileCount < mYTileCount ? mXTileCount : mYTileCount;
+    	
+    	// Assuming the map is square (rows == cols)
+    	int scaleFactor = (int) Math.ceil( (double) Map.MAP_ROWS / minimumTileCount);
     	
     	for ( int x = 0; x < mXTileCount; x++ ) {
 
 			for ( int y = 0; y < mYTileCount; y++ ) {
-				setTile(RED_STAR, x, y);
+				setTile(OFFROAD_DIRT, x, y);
 			}
 			
 		}
@@ -112,13 +116,13 @@ public class MapView extends TileView {
 
 			for ( int y = 0; y < Map.MAP_COLUMNS; y++ ) {
 				
-				if ( ( ( x / xfactor ) < mXTileCount ) && ( ( y / yfactor ) < mYTileCount ) ) {
+				if ( ( ( x / scaleFactor ) < minimumTileCount ) && ( ( y / scaleFactor ) < minimumTileCount ) ) {
 					
 					if ( mMap.tileArray[x][y] == (char) 1 ) {
-						setTile(GREEN_STAR, ( x / xfactor ), ( y / yfactor ));
+						setTile(ROAD_GRASS, ( x / scaleFactor ), ( y / scaleFactor ));
 					}
 					else if ( mMap.tileArray[x][y] == (char) 0 ) {
-						setTile(RED_STAR, ( x / xfactor ), ( y / yfactor ));
+						setTile(OFFROAD_DIRT, ( x / scaleFactor ), ( y / scaleFactor ));
 					}
 					
 				}
