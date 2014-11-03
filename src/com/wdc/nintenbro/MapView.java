@@ -18,9 +18,13 @@ public class MapView extends TileView {
 	private static final int OFFROAD_DIRT = 1;
     private static final int YELLOW_STAR = 2;
     private static final int ROAD_GRASS = 3;
+    private static final int ITEM_BOX = 4;
     
-    private long mMoveDelay = 1000;
+    private long mMoveDelay = 100;
     private long mLastMove;
+    
+    private int mTestCarX = 0;
+    private int mTestCarY = 50;
     
     private RefreshHandler mRedrawHandler = new RefreshHandler();
 
@@ -46,6 +50,37 @@ public class MapView extends TileView {
 	        clearTiles();
 	        drawMap();
 	        mLastMove = now;
+	        
+	        if ( mXTileCount > 0 && mYTileCount > 0 ) {
+	        	
+		        // If in the lower right, move increasing y, decreasing x
+		        if ( mTestCarX > ( Map.MAP_ROWS / 2 ) && mTestCarY > ( Map.MAP_ROWS / 2 ) ) {
+			        mTestCarX = mTestCarX - 1;
+			        mTestCarY = mTestCarY + 1;
+		        }
+		        // If in the lower left, move decreasing y, decreasing x
+		        else if ( mTestCarX <= ( Map.MAP_ROWS / 2 ) && mTestCarY > ( Map.MAP_ROWS / 2 ) ) {
+			        mTestCarX = mTestCarX - 1;
+			        mTestCarY = mTestCarY - 1;
+		        }
+		        // In in the upper left, move decreasing y, increasing x
+		        else if ( mTestCarX <= ( Map.MAP_ROWS / 2 ) && mTestCarY <= ( Map.MAP_ROWS / 2 ) ) {
+			        mTestCarX = mTestCarX + 1;
+			        mTestCarY = mTestCarY - 1;
+		        }
+		        // In in the upper right, move increasing y, increasing x
+		        else {
+		        	mTestCarX = mTestCarX + 1;
+			        mTestCarY = mTestCarY + 1;
+		        }
+		        
+		        mTestCarX = mTestCarX < 0 ? 0 : mTestCarX;
+		        mTestCarY = mTestCarY < 0 ? 0 : mTestCarY;
+		        
+		        mTestCarX = mTestCarX > Map.MAP_ROWS ? Map.MAP_ROWS : mTestCarX;
+		        mTestCarY = mTestCarY > Map.MAP_COLUMNS ? Map.MAP_COLUMNS : mTestCarY;
+	        }
+	        
 	    }
 	    mRedrawHandler.sleep(mMoveDelay);
     } // end function update
@@ -80,13 +115,14 @@ public class MapView extends TileView {
         // green
         test2.getPaint().setColor(0xFF007C00);
 
-        resetTiles(4);
+        resetTiles(5);
         //index 0 is blank
         loadTile(OFFROAD_DIRT, r.getDrawable(R.drawable.dirt));
         //loadTile(OFFROAD_DIRT, test);
         loadTile(YELLOW_STAR, r.getDrawable(R.drawable.yellowstar));
         loadTile(ROAD_GRASS, r.getDrawable(R.drawable.grass1));
         //loadTile(ROAD_GRASS, test2);
+        loadTile(ITEM_BOX, r.getDrawable(R.drawable.itembox));
 
     } // end function initMapView
     
@@ -96,12 +132,18 @@ public class MapView extends TileView {
     } // end function setMap
     
     private void drawMap() {
+    	
+    	if ( mMap == null )
+    		return;
 
     	// Get the minimum between x and y tiles to limit the map to a square
     	int minimumTileCount = mXTileCount < mYTileCount ? mXTileCount : mYTileCount;
     	
     	// Assuming the map is square (rows == cols)
     	int scaleFactor = (int) Math.ceil( (double) Map.MAP_ROWS / minimumTileCount);
+    	
+    	int extraXTileCount = ( mXTileCount - ( Map.MAP_ROWS / scaleFactor ) );
+    	int extraYTileCount = ( mYTileCount - ( Map.MAP_COLUMNS / scaleFactor ) );
     	
     	for ( int x = 0; x < mXTileCount; x++ ) {
 
@@ -116,13 +158,16 @@ public class MapView extends TileView {
 
 			for ( int y = 0; y < Map.MAP_COLUMNS; y++ ) {
 				
-				if ( ( ( x / scaleFactor ) < minimumTileCount ) && ( ( y / scaleFactor ) < minimumTileCount ) ) {
+				int xTile = ( ( x / scaleFactor ) + ( extraXTileCount / 2 ) );
+				int yTile = ( ( y / scaleFactor ) + ( extraYTileCount / 2 ) );
+				
+				if ( ( xTile < mXTileCount ) && ( yTile < mYTileCount ) ) {
 					
 					if ( mMap.tileArray[x][y] == (char) 1 ) {
-						setTile(ROAD_GRASS, ( x / scaleFactor ), ( y / scaleFactor ));
+						setTile(ROAD_GRASS, xTile, yTile);
 					}
 					else if ( mMap.tileArray[x][y] == (char) 0 ) {
-						setTile(OFFROAD_DIRT, ( x / scaleFactor ), ( y / scaleFactor ));
+						setTile(OFFROAD_DIRT, xTile, yTile);
 					}
 					
 				}
@@ -130,6 +175,32 @@ public class MapView extends TileView {
 			}
 			
 		}
+		
+		// Set item boxes after so they don't get covered up by rounding the grass tiles
+		for ( int x = 0; x < Map.MAP_ROWS; x++ ) {
+
+			for ( int y = 0; y < Map.MAP_COLUMNS; y++ ) {
+				
+				int xTile = ( ( x / scaleFactor ) + ( extraXTileCount / 2 ) );
+				int yTile = ( ( y / scaleFactor ) + ( extraYTileCount / 2 ) );
+				
+				if ( ( xTile < mXTileCount ) && ( yTile < mYTileCount ) ) {
+					
+					if ( mMap.tileArray[x][y] == (char) 2 ) {
+						setTile(ITEM_BOX, xTile, yTile);
+					}
+					
+				}
+				
+			}
+			
+		}
+		
+		int xTile = ( ( mTestCarX / scaleFactor ) + ( extraXTileCount / 2 ) );
+		int yTile = ( ( mTestCarY / scaleFactor ) + ( extraYTileCount / 2 ) );
+		
+		if ( ( xTile < mXTileCount ) && ( yTile < mYTileCount ) )
+			setTile(YELLOW_STAR, xTile, yTile);
 		
     } // end function drawMap
     

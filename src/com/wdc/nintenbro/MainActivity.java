@@ -28,6 +28,7 @@ public class MainActivity extends ActionBarActivity {
 	private Socket mSocket;
 	private ServerSocket mServerSocket;
 	Handler updateConversationHandler;
+	private MapView mMapView;
 	
 	// adb will have the first emulator launcher on port 5554 of the localhost
 	// second emulator will be port 5556
@@ -71,17 +72,18 @@ public class MainActivity extends ActionBarActivity {
 	        new Thread( new ServerThread() ).start();
         
         }
+        
+        // Start the map update loop
+	    mMapView = (MapView) findViewById(R.id.mapview);
+	    mMapView.update();
 
     } // end function onCreate
-    
-    public void launchMapActivity(View view) {
-    	Intent intent = new Intent(this, MapActivity.class);
-        startActivity(intent);
-    } // end function launchMapActivity
     
     @Override
 	protected void onStop() {
 		super.onStop();
+		
+		mMapView.setMap(null);
 		
 		try {
 			
@@ -319,12 +321,12 @@ public class MainActivity extends ActionBarActivity {
     } // end function setItem
     
     public void setButtonOn() {
-    	ImageButton clickButton = (ImageButton) findViewById(R.id.imageButton1);
+    	ImageButton clickButton = (ImageButton) findViewById(R.id.launchitembutton);
     	clickButton.setImageResource(android.R.drawable.btn_star_big_on);
     } // end function setButtonOn
     
     public void setButtonOff() {
-    	ImageButton clickButton = (ImageButton) findViewById(R.id.imageButton1);
+    	ImageButton clickButton = (ImageButton) findViewById(R.id.launchitembutton);
     	clickButton.setImageResource(android.R.drawable.btn_star_big_off);
     } // end function setButtonOff
     
