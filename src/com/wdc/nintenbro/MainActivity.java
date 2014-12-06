@@ -1,17 +1,19 @@
 package com.wdc.nintenbro;
 
+import java.net.DatagramSocket;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Random;
 
 import android.support.v7.app.ActionBarActivity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -27,6 +29,7 @@ public class MainActivity extends ActionBarActivity {
 	private Item mCurrentItem;
 	private Socket mSocket;
 	private ServerSocket mServerSocket;
+	private DatagramSocket mDatagramSocket;
 	Handler updateConversationHandler;
 	private MapView mMapView;
 	
@@ -43,7 +46,7 @@ public class MainActivity extends ActionBarActivity {
 	private static final int TARGET_PORT = 5000;
     private static final String TARGET_IP = "10.0.2.2";
     
-    private static final boolean mServerModeFlag = false;
+    private static final boolean mServerModeFlag = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,12 +91,13 @@ public class MainActivity extends ActionBarActivity {
 		try {
 			
 			if ( mServerModeFlag == false )
-				
+			{
 				if ( mSocket.isConnected() )
 					mSocket.close();
-			
-			else
-				mServerSocket.close();
+			}
+			//else
+			//	if ( mSocket.isConnected() )
+			//		mServerSocket.close();
 		} 
 		catch (Exception e) {
 			e.printStackTrace();
@@ -132,28 +136,32 @@ public class MainActivity extends ActionBarActivity {
 			Socket socket = null;
 			
 			try {
-				mServerSocket = new ServerSocket(SERVERPORT);
+				//mServerSocket = new ServerSocket(SERVERPORT);
+				mDatagramSocket = new DatagramSocket(SERVERPORT);
+				//Log.v("Nintenbro", mServerSocket.getLocalSocketAddress().toString() );
+				//updateConversationHandler.post( new updateConnectionText( mServerSocket.getLocalSocketAddress().toString() ) );
+				updateConversationHandler.post( new updateConnectionText( mDatagramSocket.getLocalSocketAddress().toString() ) );
 			} 
 			catch (Exception e) {
 				e.printStackTrace();
 			}
 			
-			while ( !Thread.currentThread().isInterrupted() ) {
+			//while ( !Thread.currentThread().isInterrupted() ) {
 
 				try {
-					socket = mServerSocket.accept();
-					
-					Log.v("Nintenbro", "server socket accepted connection");
+					//socket = mServerSocket.accept();
+					//Log.v("Nintenbro", "server socket accepted connection");
 
 					// Launch input communication thread to handle the message received
-					InputCommunicationThread commThread = new InputCommunicationThread( socket );
+					//InputCommunicationThread commThread = new InputCommunicationThread( socket );
+					InputCommunicationThread commThread = new InputCommunicationThread( mDatagramSocket );
 					new Thread( commThread ).start();
 				} 
 				catch ( Exception e ) {
 					e.printStackTrace();
 				}
 				
-			}
+			//}
 			
 		} // end function run
 		
@@ -162,6 +170,7 @@ public class MainActivity extends ActionBarActivity {
     class InputCommunicationThread implements Runnable {
 		private Socket clientSocket;
 		private BufferedReader input;
+		private DatagramSocket UDPSocket;
 
 		public InputCommunicationThread( Socket clientSocket ) {
 
@@ -175,27 +184,60 @@ public class MainActivity extends ActionBarActivity {
 			}
 			
 		} // end function InputCommunicationThread
+		
+		public InputCommunicationThread( DatagramSocket UDPSocket ) {
+			this.UDPSocket = UDPSocket;
+		} // end function InputCommunicationThread
 
 		public void run() {
 			
-			updateConversationHandler.post( new updateConnectionText( "Connected" ) );
-
-			while ( !Thread.currentThread().isInterrupted() ) {
-
-				try {
-					String read = input.readLine();
-					Log.v("Nintenbro", "read " + read);
+			if ( clientSocket != null )
+			{
+				updateConversationHandler.post( new updateConnectionText( "Connected" ) );
+	
+				while ( !Thread.currentThread().isInterrupted() ) {
+	
+					try {
+						String read = input.readLine();
+						Log.v("Nintenbro", "read " + read);
+						
+						// Post to UI thread's handler
+						updateConversationHandler.post( new updateUIThread( read ) );
+						
+					} 
+					catch ( Exception e ) {
+						e.printStackTrace();
+					}
 					
-					// Post to UI thread's handler
-					updateConversationHandler.post( new updateUIThread( read ) );
-					
-				} 
-				catch ( Exception e ) {
-					e.printStackTrace();
 				}
 				
 			}
-			
+			else
+			{
+				byte[] buf = new byte[512];
+			    DatagramPacket packet = new DatagramPacket(buf, buf.length);
+			    while (true) {
+			    	updateConversationHandler.post( new updateConnectionText( "Waiting on address " + mDatagramSocket.getLocalSocketAddress().toString() ) );
+			    	
+			    	try
+			    	{
+			    		Log.v("Nintenbro", "Waiting for data");
+			    		UDPSocket.receive(packet);
+			    		Log.v("Nintenbro", "Data received : " + new String( packet.getData(), 0, packet.getLength() ) );
+				  
+			    		// Post to UI thread's handler
+			    		updateConversationHandler.post( new updateUIThread( new String( packet.getData(), 0, packet.getLength() ) ) );
+					  
+			    	}
+			    	catch (IOException e)
+			    	{
+			    		e.printStackTrace();
+			    	}
+			    	
+		    	}
+			    
+			}
+					
 		} // end function run
 
 	} // end class Communication Thread
