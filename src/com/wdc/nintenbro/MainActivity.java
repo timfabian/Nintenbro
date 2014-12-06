@@ -27,9 +27,8 @@ import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity {
 	private Item mCurrentItem;
-	private Socket mSocket;
-	private ServerSocket mServerSocket;
-	private DatagramSocket mDatagramSocket;
+	private DatagramSocket mSendingSocket;
+	private DatagramSocket mListeningSocket;
 	Handler updateConversationHandler;
 	private MapView mMapView;
 	
@@ -45,8 +44,6 @@ public class MainActivity extends ActionBarActivity {
 	// 10.0.2.2:5000 is the alias for the localhost
 	private static final int TARGET_PORT = 5000;
     private static final String TARGET_IP = "10.0.2.2";
-    
-    private static final boolean mServerModeFlag = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,25 +53,14 @@ public class MainActivity extends ActionBarActivity {
         // Initialize
         mCurrentItem = Item.NULL;
         
-        if ( mServerModeFlag == false ) {
-        	
-        	Log.v("Nintenbro", "client flag");
-        
-	        // Start the client thread to open a socket
-	        new Thread( new ClientThread() ).start();
-        
-        }
-        else {
-        	
-        	Log.v("Nintenbro", "server flag");
-        	
-        	// Handler on the UI thread allows the server thread to update the UI with items
-        	updateConversationHandler = new Handler();
-        
-	        // Start listening on the server thread
-	        new Thread( new ServerThread() ).start();
-        
-        }
+        // Start the client thread to open a socket
+        new Thread( new ClientThread() ).start();
+    
+    	// Handler on the UI thread allows the server thread to update the UI with items
+    	updateConversationHandler = new Handler();
+    
+        // Start listening on the server thread
+        new Thread( new ServerThread() ).start();
         
         // Start the map update loop
 	    mMapView = (MapView) findViewById(R.id.mapview);
@@ -85,24 +71,6 @@ public class MainActivity extends ActionBarActivity {
     @Override
 	protected void onStop() {
 		super.onStop();
-		
-		mMapView.setMap(null);
-		
-		try {
-			
-			if ( mServerModeFlag == false )
-			{
-				if ( mSocket.isConnected() )
-					mSocket.close();
-			}
-			//else
-			//	if ( mSocket.isConnected() )
-			//		mServerSocket.close();
-		} 
-		catch (Exception e) {
-			e.printStackTrace();
-		}
-		
 	} // end function onStop
 
     class ClientThread implements Runnable {
@@ -113,13 +81,21 @@ public class MainActivity extends ActionBarActivity {
     		try {
     			
     			// TODO - IP address
-    			InetAddress servAddr = InetAddress.getByName(TARGET_IP);
+    			InetAddress servAddr = InetAddress.getByName( "192.168.2.100" ); // TARGET_IP
     			
-    			// TODO - port number
-    			mSocket = new Socket(servAddr, TARGET_PORT);
+    			mSendingSocket = new DatagramSocket( SERVERPORT + 1 );
     			
-    			updateConversationHandler.post( new updateConnectionText( "Connected" ) );
+    			byte[] buf = new byte[512];
+			    DatagramPacket packet = new DatagramPacket(buf, buf.length);
+			    
+			    byte[] bytes = "Sup from Nintenbro".getBytes();
+		        System.arraycopy(bytes, 0, packet.getData(), 0, bytes.length);
+		        packet.setLength(bytes.length);
+		        
+		        packet.setAddress(servAddr);
+                packet.setPort(5000); // TARGET_PORT
     			
+    			mSendingSocket.send(packet);
     		}
     		// TODO - better error handling
     		catch (Exception e) {
@@ -133,97 +109,22 @@ public class MainActivity extends ActionBarActivity {
     class ServerThread implements Runnable {
 
 		public void run() {
-			Socket socket = null;
-			
-			try {
-				//mServerSocket = new ServerSocket(SERVERPORT);
-				mDatagramSocket = new DatagramSocket(SERVERPORT);
-				//Log.v("Nintenbro", mServerSocket.getLocalSocketAddress().toString() );
-				//updateConversationHandler.post( new updateConnectionText( mServerSocket.getLocalSocketAddress().toString() ) );
-				updateConversationHandler.post( new updateConnectionText( mDatagramSocket.getLocalSocketAddress().toString() ) );
-			} 
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-			
-			//while ( !Thread.currentThread().isInterrupted() ) {
-
-				try {
-					//socket = mServerSocket.accept();
-					//Log.v("Nintenbro", "server socket accepted connection");
-
-					// Launch input communication thread to handle the message received
-					//InputCommunicationThread commThread = new InputCommunicationThread( socket );
-					InputCommunicationThread commThread = new InputCommunicationThread( mDatagramSocket );
-					new Thread( commThread ).start();
-				} 
-				catch ( Exception e ) {
-					e.printStackTrace();
-				}
-				
-			//}
-			
-		} // end function run
-		
-	} // end class ServerThread
-    
-    class InputCommunicationThread implements Runnable {
-		private Socket clientSocket;
-		private BufferedReader input;
-		private DatagramSocket UDPSocket;
-
-		public InputCommunicationThread( Socket clientSocket ) {
-
-			this.clientSocket = clientSocket;
 
 			try {
-				this.input = new BufferedReader( new InputStreamReader( this.clientSocket.getInputStream() ) );
-			} 
-			catch ( Exception e ) {
-				e.printStackTrace();
-			}
-			
-		} // end function InputCommunicationThread
-		
-		public InputCommunicationThread( DatagramSocket UDPSocket ) {
-			this.UDPSocket = UDPSocket;
-		} // end function InputCommunicationThread
+				mListeningSocket = new DatagramSocket(SERVERPORT);
+				updateConversationHandler.post( new updateConnectionText( mListeningSocket.getLocalSocketAddress().toString() ) );
 
-		public void run() {
-			
-			if ( clientSocket != null )
-			{
-				updateConversationHandler.post( new updateConnectionText( "Connected" ) );
-	
-				while ( !Thread.currentThread().isInterrupted() ) {
-	
-					try {
-						String read = input.readLine();
-						Log.v("Nintenbro", "read " + read);
-						
-						// Post to UI thread's handler
-						updateConversationHandler.post( new updateUIThread( read ) );
-						
-					} 
-					catch ( Exception e ) {
-						e.printStackTrace();
-					}
-					
-				}
-				
-			}
-			else
-			{
 				byte[] buf = new byte[512];
 			    DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			    while (true) {
-			    	updateConversationHandler.post( new updateConnectionText( "Waiting on address " + mDatagramSocket.getLocalSocketAddress().toString() ) );
+			    	updateConversationHandler.post( new updateConnectionText( "Waiting on address " + mListeningSocket.getLocalSocketAddress().toString() ) );
 			    	
 			    	try
 			    	{
 			    		Log.v("Nintenbro", "Waiting for data");
-			    		UDPSocket.receive(packet);
-			    		Log.v("Nintenbro", "Data received : " + new String( packet.getData(), 0, packet.getLength() ) );
+			    		mListeningSocket.receive(packet);
+			    		Log.v("Nintenbro", "Data received   : " + new String( packet.getData(), 0, packet.getLength() ) );
+			    		Log.v("Nintenbro", "Packet was from : " + packet.getAddress().toString() );
 				  
 			    		// Post to UI thread's handler
 			    		updateConversationHandler.post( new updateUIThread( new String( packet.getData(), 0, packet.getLength() ) ) );
@@ -235,12 +136,15 @@ public class MainActivity extends ActionBarActivity {
 			    	}
 			    	
 		    	}
-			    
+		    
+			} 
+			catch (Exception e) {
+				e.printStackTrace();
 			}
-					
+			
 		} // end function run
-
-	} // end class Communication Thread
+		
+	} // end class ServerThread
     
     class updateUIThread implements Runnable {
 		private String msg;
@@ -316,9 +220,9 @@ public class MainActivity extends ActionBarActivity {
     		try {
     			
     			// TODO - message protocol?
-    			Toast.makeText(getApplicationContext(), "send launch item", Toast.LENGTH_SHORT).show();
-	            PrintWriter out = new PrintWriter( new BufferedWriter( new OutputStreamWriter( mSocket.getOutputStream() ) ), true);
-	            out.println("Launch item");
+    			//Toast.makeText(getApplicationContext(), "send launch item", Toast.LENGTH_SHORT).show();
+	            //PrintWriter out = new PrintWriter( new BufferedWriter( new OutputStreamWriter( mSocket.getOutputStream() ) ), true);
+	            //out.println("Launch item");
 	            
 	        } 
     		catch (Exception e) {
