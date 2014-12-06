@@ -11,6 +11,7 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Random;
 
 import android.support.v7.app.ActionBarActivity;
@@ -71,6 +72,9 @@ public class MainActivity extends ActionBarActivity {
     @Override
 	protected void onStop() {
 		super.onStop();
+		
+		// I should close the sockets or something here, maybe on pause?
+		
 	} // end function onStop
 
     class ClientThread implements Runnable {
@@ -182,6 +186,47 @@ public class MainActivity extends ActionBarActivity {
 		} // end function run
     	
     } // end class updateConnectionText
+    
+    class senMessageThread implements Runnable {
+		private String msg;
+
+		public senMessageThread( String str ) {
+			this.msg = str;
+		}
+
+		@Override
+		public void run() {
+			byte[] buf = new byte[512];
+		    DatagramPacket packet = new DatagramPacket(buf, buf.length);
+		    
+		    InetAddress servAddr;
+			try {
+				servAddr = InetAddress.getByName( "192.168.2.100" );
+			
+			    byte[] bytes = msg.getBytes();
+		        System.arraycopy(bytes, 0, packet.getData(), 0, bytes.length);
+		        packet.setLength(bytes.length);
+		        
+		        packet.setAddress(servAddr);
+	            packet.setPort(5000); // TARGET_PORT
+				
+				try {
+					mSendingSocket.send(packet);
+				} 
+				catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			} 
+			catch (UnknownHostException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+		} // end function run
+		
+	}
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -216,19 +261,8 @@ public class MainActivity extends ActionBarActivity {
     		
     	}
     	else {
-    		
-    		try {
-    			
-    			// TODO - message protocol?
-    			//Toast.makeText(getApplicationContext(), "send launch item", Toast.LENGTH_SHORT).show();
-	            //PrintWriter out = new PrintWriter( new BufferedWriter( new OutputStreamWriter( mSocket.getOutputStream() ) ), true);
-	            //out.println("Launch item");
-	            
-	        } 
-    		catch (Exception e) {
-	            e.printStackTrace();
-	        }
-    		
+	        new Thread( new senMessageThread( "Launch item" ) ).start();
+
     		setItem(Item.NULL);
     	}
     	
