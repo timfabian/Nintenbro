@@ -3,8 +3,6 @@ package com.wdc.nintenbro;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.RectShape;
-import android.graphics.drawable.shapes.Shape;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
@@ -25,6 +23,7 @@ public class MapView extends TileView {
     
     private int mTestCarX = 0;
     private int mTestCarY = 50;
+    private boolean useActualCarLocation = false;
     
     private RefreshHandler mRedrawHandler = new RefreshHandler();
 
@@ -43,6 +42,13 @@ public class MapView extends TileView {
         
     } // end class RefreshHandler
     
+    public void setCarLocation( int x, int y ) {
+    	mTestCarX = x;
+    	mTestCarY = y;
+    	
+    	useActualCarLocation = true;
+    }
+    
     public void update() {
 	    long now = System.currentTimeMillis();
 	
@@ -51,35 +57,40 @@ public class MapView extends TileView {
 	        drawMap();
 	        mLastMove = now;
 	        
-	        if ( mXTileCount > 0 && mYTileCount > 0 ) {
+	        if ( useActualCarLocation == false )
+	        {
 	        	
-		        // If in the lower right, move increasing y, decreasing x
-		        if ( mTestCarX > ( Map.MAP_ROWS / 2 ) && mTestCarY > ( Map.MAP_ROWS / 2 ) ) {
-			        mTestCarX = mTestCarX - 1;
-			        mTestCarY = mTestCarY + 1;
+		        if ( mXTileCount > 0 && mYTileCount > 0 ) {
+		        	
+			        // If in the lower right, move increasing y, decreasing x
+			        if ( mTestCarX > ( Map.MAP_ROWS / 2 ) && mTestCarY > ( Map.MAP_ROWS / 2 ) ) {
+				        mTestCarX = mTestCarX - 1;
+				        mTestCarY = mTestCarY + 1;
+			        }
+			        // If in the lower left, move decreasing y, decreasing x
+			        else if ( mTestCarX <= ( Map.MAP_ROWS / 2 ) && mTestCarY > ( Map.MAP_ROWS / 2 ) ) {
+				        mTestCarX = mTestCarX - 1;
+				        mTestCarY = mTestCarY - 1;
+			        }
+			        // In in the upper left, move decreasing y, increasing x
+			        else if ( mTestCarX <= ( Map.MAP_ROWS / 2 ) && mTestCarY <= ( Map.MAP_ROWS / 2 ) ) {
+				        mTestCarX = mTestCarX + 1;
+				        mTestCarY = mTestCarY - 1;
+			        }
+			        // In in the upper right, move increasing y, increasing x
+			        else {
+			        	mTestCarX = mTestCarX + 1;
+				        mTestCarY = mTestCarY + 1;
+			        }
+			        
+			        mTestCarX = mTestCarX < 0 ? 0 : mTestCarX;
+			        mTestCarY = mTestCarY < 0 ? 0 : mTestCarY;
+			        
+			        mTestCarX = mTestCarX > Map.MAP_ROWS ? Map.MAP_ROWS : mTestCarX;
+			        mTestCarY = mTestCarY > Map.MAP_COLUMNS ? Map.MAP_COLUMNS : mTestCarY;
 		        }
-		        // If in the lower left, move decreasing y, decreasing x
-		        else if ( mTestCarX <= ( Map.MAP_ROWS / 2 ) && mTestCarY > ( Map.MAP_ROWS / 2 ) ) {
-			        mTestCarX = mTestCarX - 1;
-			        mTestCarY = mTestCarY - 1;
-		        }
-		        // In in the upper left, move decreasing y, increasing x
-		        else if ( mTestCarX <= ( Map.MAP_ROWS / 2 ) && mTestCarY <= ( Map.MAP_ROWS / 2 ) ) {
-			        mTestCarX = mTestCarX + 1;
-			        mTestCarY = mTestCarY - 1;
-		        }
-		        // In in the upper right, move increasing y, increasing x
-		        else {
-		        	mTestCarX = mTestCarX + 1;
-			        mTestCarY = mTestCarY + 1;
-		        }
-		        
-		        mTestCarX = mTestCarX < 0 ? 0 : mTestCarX;
-		        mTestCarY = mTestCarY < 0 ? 0 : mTestCarY;
-		        
-		        mTestCarX = mTestCarX > Map.MAP_ROWS ? Map.MAP_ROWS : mTestCarX;
-		        mTestCarY = mTestCarY > Map.MAP_COLUMNS ? Map.MAP_COLUMNS : mTestCarY;
-	        }
+	        
+	    	}
 	        
 	    }
 	    mRedrawHandler.sleep(mMoveDelay);

@@ -1,7 +1,5 @@
 package com.wdc.nintenbro;
 
-import android.util.Log;
-
 public class Map {
 	public static final int MAP_ROWS = 100; 
 	public static final int MAP_COLUMNS = 100;

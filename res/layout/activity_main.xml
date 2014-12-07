@@ -30,7 +30,7 @@
             android:layout_below="@+id/imageView1"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="25dp"
-            android:onClick="sendMessage"
+            android:onClick="sendItemMessage"
             android:src="@android:drawable/btn_star_big_off" />
 
         <ImageView
@@ -42,6 +42,16 @@
             android:layout_marginTop="36dp"
             android:src="@drawable/banana"
             android:visibility="invisible" />
+
+        <Button
+            android:id="@+id/button1"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:text="Greeting"
+            android:onClick="sendGreetingMessage" />
 
     </RelativeLayout>
     

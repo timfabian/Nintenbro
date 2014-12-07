@@ -1,19 +1,14 @@
 package com.wdc.nintenbro;
 
 import java.net.DatagramSocket;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -34,16 +29,10 @@ public class MainActivity extends ActionBarActivity {
 	Handler updateConversationHandler;
 	private MapView mMapView;
 	
-	// adb will have the first emulator launcher on port 5554 of the localhost
-	// second emulator will be port 5556
-	
-	// telnet into the server emulator
-	// redir add tcp:5000:6000
-	
-	// Port to open on the emulator's IP
+	// Port to listen on
 	public static final int SERVERPORT = 6000;
 	
-	// 10.0.2.2:5000 is the alias for the localhost
+	// Address to send messages to
 	private static final int TARGET_PORT = 5000;
     private static final String TARGET_IP = "192.168.2.103";
 
@@ -84,11 +73,9 @@ public class MainActivity extends ActionBarActivity {
     	public void run() {
     		
     		try {
+    			InetAddress servAddr = InetAddress.getByName( TARGET_IP );
     			
-    			// TODO - IP address
-    			InetAddress servAddr = InetAddress.getByName( TARGET_IP ); // TARGET_IP
-    			
-    			mSendingSocket = new DatagramSocket( SERVERPORT + 1 );
+    			mSendingSocket = new DatagramSocket( SERVERPORT + 1 ); // I suppose that I could not set a port to pick any available port
     			
     			byte[] buf = new byte[512];
 			    DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -98,7 +85,7 @@ public class MainActivity extends ActionBarActivity {
 		        packet.setLength(bytes.length);
 		        
 		        packet.setAddress(servAddr);
-                packet.setPort(5000); // TARGET_PORT
+                packet.setPort(TARGET_PORT);
     			
     			mSendingSocket.send(packet);
     		}
@@ -122,6 +109,7 @@ public class MainActivity extends ActionBarActivity {
 				byte[] buf = new byte[512];
 				Arrays.fill(buf, (byte)0);
 			    DatagramPacket packet = new DatagramPacket(buf, buf.length);
+			    
 			    while (true) {
 			    	updateConversationHandler.post( new updateConnectionText( "Waiting on address " + mListeningSocket.getLocalSocketAddress().toString() ) );
 			    	
@@ -163,12 +151,33 @@ public class MainActivity extends ActionBarActivity {
 		public void run() {
 			Toast.makeText(getApplicationContext(), "Client Says: "+ msg, Toast.LENGTH_SHORT).show();
 			
-			if ( msg.equals("receive mushroom") )
+			//message << "x:" << p.x << " y:" << p.y;
+			Pattern pattern = Pattern.compile( "x:([0-9]?) y:([0-9]?)" );
+			Matcher matcher = pattern.matcher( msg );
+			
+			if ( matcher.matches() )
+			{
+				int x = Integer.parseInt( matcher.group(1) );
+				int y = Integer.parseInt( matcher.group(2) );
+				
+				// need to scale down by 10? 1000 / MAP_ROWS or 1000 / MAP_COLUMNS
+				mMapView.setCarLocation( x, y );
+				
+				// OFFROAD_DIRT, YELLOW_STAR, ROAD_GRASS, ITEM_BOX
+				// mMapView.setTile(tileindex, x, y)
+			}
+			else if ( msg.equals("receive mushroom") )
+			{
 				setItem( Item.MUSHROOM );
+			}
 			else if ( msg.equals("receive redshell") )
+			{
 				setItem( Item.REDSHELL );
+			}
 			else if ( msg.equals("receive banana") )
+			{
 				setItem( Item.BANANA );
+			}
 			
 		} // end function run
 		
@@ -200,8 +209,8 @@ public class MainActivity extends ActionBarActivity {
 		public void run() {
 			byte[] buf = new byte[512];
 		    DatagramPacket packet = new DatagramPacket(buf, buf.length);
-		    
 		    InetAddress servAddr;
+		    
 			try {
 				servAddr = InetAddress.getByName( TARGET_IP );
 			
@@ -210,7 +219,7 @@ public class MainActivity extends ActionBarActivity {
 		        packet.setLength(bytes.length);
 		        
 		        packet.setAddress(servAddr);
-	            packet.setPort(5000); // TARGET_PORT
+	            packet.setPort(TARGET_PORT);
 				
 				try {
 					mSendingSocket.send(packet);
@@ -249,9 +258,9 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     } // end function onOptionsItemSelected
     
-    public void sendMessage(View view) {
+    public void sendItemMessage(View view) {
     	
-    	Log.v("Nintenbro", "sendMessage");
+    	Log.v("Nintenbro", "sendItemMessage");
     	
     	if ( mCurrentItem == Item.NULL ) {
     		
@@ -263,12 +272,33 @@ public class MainActivity extends ActionBarActivity {
     		
     	}
     	else {
-	        new Thread( new senMessageThread( "Launch item" ) ).start();
+    		String message;
+    		
+    		switch (mCurrentItem) {
+	    		case BANANA :
+	    			message = "Launch banana";
+	    			break;
+	    		case MUSHROOM :
+	    			message = "Launch mushroom";
+	    			break;
+	    		case REDSHELL :
+	    			message = "Launch redshell";
+	    			break;
+	    		default :
+	    			message = "Launch item";
+	    			break;
+    		}
+    		
+	        new Thread( new senMessageThread( message ) ).start();
 
     		setItem(Item.NULL);
     	}
     	
     } // end function sendMessage
+    
+    public void sendGreetingMessage(View view) {
+    	new Thread( new senMessageThread( "Sup from Nintenbro" ) ).start();
+    }
     
     public void setItem (Item item) {
     	ImageView img= (ImageView) findViewById(R.id.imageView1);
