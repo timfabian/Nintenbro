@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Random;
 
 import android.support.v7.app.ActionBarActivity;
@@ -44,7 +45,7 @@ public class MainActivity extends ActionBarActivity {
 	
 	// 10.0.2.2:5000 is the alias for the localhost
 	private static final int TARGET_PORT = 5000;
-    private static final String TARGET_IP = "10.0.2.2";
+    private static final String TARGET_IP = "192.168.2.103";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +86,7 @@ public class MainActivity extends ActionBarActivity {
     		try {
     			
     			// TODO - IP address
-    			InetAddress servAddr = InetAddress.getByName( "192.168.2.100" ); // TARGET_IP
+    			InetAddress servAddr = InetAddress.getByName( TARGET_IP ); // TARGET_IP
     			
     			mSendingSocket = new DatagramSocket( SERVERPORT + 1 );
     			
@@ -119,6 +120,7 @@ public class MainActivity extends ActionBarActivity {
 				updateConversationHandler.post( new updateConnectionText( mListeningSocket.getLocalSocketAddress().toString() ) );
 
 				byte[] buf = new byte[512];
+				Arrays.fill(buf, (byte)0);
 			    DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			    while (true) {
 			    	updateConversationHandler.post( new updateConnectionText( "Waiting on address " + mListeningSocket.getLocalSocketAddress().toString() ) );
@@ -201,7 +203,7 @@ public class MainActivity extends ActionBarActivity {
 		    
 		    InetAddress servAddr;
 			try {
-				servAddr = InetAddress.getByName( "192.168.2.100" );
+				servAddr = InetAddress.getByName( TARGET_IP );
 			
 			    byte[] bytes = msg.getBytes();
 		        System.arraycopy(bytes, 0, packet.getData(), 0, bytes.length);
