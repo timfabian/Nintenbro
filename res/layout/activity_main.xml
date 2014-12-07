@@ -21,7 +21,8 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:text="No Connection" />
+            android:text="No Connection"
+            android:textColor="#0000ff" />
 
         <ImageButton
             android:id="@+id/launchitembutton"
