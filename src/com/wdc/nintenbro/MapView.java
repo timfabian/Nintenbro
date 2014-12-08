@@ -142,6 +142,10 @@ public class MapView extends TileView {
     	mMap = map;
     } // end function setMap
     
+    public void setMapTile ( int index, int x, int y ) {
+    	mMap.tileArray[x][y] = (char)index;
+    }
+    
     private void drawMap() {
     	
     	if ( mMap == null )

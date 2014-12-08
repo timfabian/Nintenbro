@@ -106,8 +106,8 @@ public class MainActivity extends ActionBarActivity {
 				mListeningSocket = new DatagramSocket(SERVERPORT);
 				updateConversationHandler.post( new updateConnectionText( mListeningSocket.getLocalSocketAddress().toString() ) );
 
-				byte[] buf = new byte[512];
-				Arrays.fill(buf, (byte)0);
+				byte[] buf = new byte[64000];
+				//Arrays.fill(buf, (byte)0);
 			    DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			    
 			    while (true) {
@@ -149,22 +149,48 @@ public class MainActivity extends ActionBarActivity {
 
 		@Override
 		public void run() {
-			Toast.makeText(getApplicationContext(), "Client Says: "+ msg, Toast.LENGTH_SHORT).show();
+			//Toast.makeText(getApplicationContext(), "Client Says: "+ msg, Toast.LENGTH_SHORT).show();
 			
 			//message << "x:" << p.x << " y:" << p.y;
-			Pattern pattern = Pattern.compile( "x:([0-9]?) y:([0-9]?)" );
+			Pattern pattern = Pattern.compile( "x:([0-9]+) y:([0-9]+)" );
 			Matcher matcher = pattern.matcher( msg );
+			
+			Log.v( "Nintenbro", "Parsing..." + msg );
+			Log.v( "Nintenbro", "Matches..." + matcher.matches() );
 			
 			if ( matcher.matches() )
 			{
 				int x = Integer.parseInt( matcher.group(1) );
 				int y = Integer.parseInt( matcher.group(2) );
 				
-				// need to scale down by 10? 1000 / MAP_ROWS or 1000 / MAP_COLUMNS
-				mMapView.setCarLocation( x, y );
+				Log.v( "Nintenbro", "x: " + x + " y:" + y );
 				
-				// OFFROAD_DIRT, YELLOW_STAR, ROAD_GRASS, ITEM_BOX
-				// mMapView.setTile(tileindex, x, y)
+				// need to scale down - 1000 comes from the C++ map position
+				mMapView.setCarLocation( ( x / ( 1000 / Map.MAP_ROWS ) ), ( y / ( 1000 / Map.MAP_COLUMNS ) ) );
+				
+			}
+			else if ( msg.startsWith("M:") )
+			{
+				Log.v( "Nintenbro", "length: " + msg.length() );
+				
+				for (int i = 2; i < msg.length(); i++) {
+					//const char DIRT   = 'D';
+					//const char ROAD   = '.';
+					//const char BANANA = 'B';
+					//const char WALL   = '|';
+					//const char START1 = '1';
+					//const char START2 = '2';
+					
+					if ( msg.charAt( i ) == '.' ) {
+						mMapView.setMapTile(1, ( ( i - 2 ) % Map.MAP_ROWS ), ( ( i - 2 ) / Map.MAP_COLUMNS ) );
+					}
+					else
+					{
+						mMapView.setMapTile(0, ( ( i - 2 ) % Map.MAP_ROWS ), ( ( i - 2 ) / Map.MAP_COLUMNS ) );
+					}
+					
+				}
+
 			}
 			else if ( msg.equals("receive mushroom") )
 			{
