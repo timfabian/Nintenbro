@@ -173,6 +173,12 @@ public class MainActivity extends ActionBarActivity {
 			{
 				Log.v( "Nintenbro", "length: " + msg.length() );
 				
+				for ( int x = 0; x < Map.MAP_ROWS; x++ ) {
+					for ( int y = 0; y < Map.MAP_COLUMNS; y++ ) {
+						mMapView.setMapTile( 0, x, y );
+					}
+				}
+				
 				for (int i = 2; i < msg.length(); i++) {
 					//const char DIRT   = 'D';
 					//const char ROAD   = '.';
